@@ -1,0 +1,8 @@
+ansible/
+init-container/
+*.tar
+srv/
+svd/
+test/
+*.gz
+tmp

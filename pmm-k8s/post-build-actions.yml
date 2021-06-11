@@ -1,0 +1,62 @@
+---
+# This playbook is used as a post build actions for all pmm2 images (AMI/OVF/Docker).
+
+- hosts: localhost
+  become: yes
+  gather_facts: yes
+  vars:
+    pmm_client_repos: "original testing"
+    pmm_client_repos_final: "original release"
+
+  tasks:
+    # pmm-managed checks that if /srv/pmm-distribution exist, it contains "docker", "ovf", or "ami" (all lowercase)
+
+    - name: Detect distribution        | Create '/srv/pmm-distribution' file for Docker
+      when: ansible_virtualization_type == "docker"
+      copy:
+        content: "docker"
+        dest: /srv/pmm-distribution
+
+    - name: Disable repo               | Disable testing repo for pmm2-client
+      command: percona-release disable {{ pmm_client_repos }}
+
+    - name: Enable repo                | Enable release repo for pmm2-client
+      command: percona-release enable {{ pmm_client_repos_final }}
+
+    - name: pmm-agent                  | Setup pmm-agent
+      command: >
+        pmm-agent setup
+        --config-file=/usr/local/percona/pmm2/config/pmm-agent.yaml
+        --skip-registration
+        --id=pmm-server
+        --server-address=127.0.0.1:443
+        --server-insecure-tls
+
+    - name: Supervisord stop           | Stop supervisord service for docker
+      when: ansible_virtualization_type == "docker"
+      shell: supervisorctl shutdown
+
+    - name: Post-build cleanup         | Cleanup build logs and data
+      file: path={{ item }} state=absent
+      with_items:
+        - /srv/logs
+        - /srv/prometheus/data
+        - /tmp/RPMS
+        - /var/log/yum.log
+        - /var/log/secure
+        - /var/log/wtmp
+
+    - name: Create dir                 | Create '/srv/prometheus/data' dir
+      file:
+        path: /srv/prometheus/data
+        state: directory
+        owner: pmm
+        group: pmm
+
+    - name: Create dir                 | Create '/srv/logs' dir
+      file:
+        path: /srv/logs
+        state: directory
+        owner: pmm
+        group: pmm
+        mode: "0775"

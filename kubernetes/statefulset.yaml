@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: pmm-server
+  labels:
+    app: pmm-server
+spec:
+  serviceName: pmm-server
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pmm-server
+  template:
+    metadata:
+      labels:
+        app: pmm-server
+    spec:
+      terminationGracePeriodSeconds: 1800
+      containers:
+      - name: pmm-server
+        image: pmm-server-k8s:0.1
+        imagePullPolicy: Never
+        volumeMounts:
+        - name: pmm-data
+          mountPath: /srv
+        resources:
+          limits:
+            cpu: 1
+            memory: 2Gi
+          requests:
+            cpu: 1
+            memory: 2Gi
+      # initContainers:
+      # - name: init-data
+      #   image: hpdevelop/init:0.1
+      #   imagePullPolicy: Always
+      #   volumeMounts:
+      #   - name: pmm-data
+      #     mountPath: /srv
+  volumeClaimTemplates:
+  - metadata:
+      name: pmm-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: microk8s-hostpath
+      resources:
+        requests:
+          storage: 1Gi

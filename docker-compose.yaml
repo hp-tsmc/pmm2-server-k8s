@@ -1,0 +1,19 @@
+version: '2'
+services:
+  pmm-server:
+    image: pmm-server-k8s:0.1
+    hostname: pmm-server
+    container_name: pmm-server
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    #command: sleep infinity
+    ports:
+      - "5566:443"
+    volumes:
+      - data:/srv
+volumes:
+  data:
