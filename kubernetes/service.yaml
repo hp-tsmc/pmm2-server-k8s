@@ -6,8 +6,6 @@ metadata:
   name: pmm-server
 spec:
   type: NodePort
-  externalIPs: 
-  - 10.0.2.15
   ports:
   - port: 443
     name: https
